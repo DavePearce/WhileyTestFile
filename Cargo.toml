@@ -1,0 +1,10 @@
+[package]
+name = "whiley_test_file"
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+description = "An API for manipulating test files for the Whiley Programming Language."
+homepage = "http://whiley.org"
+repository = "https://github.com/DavePearce/WhileyTestFile"
+
+[dependencies]
