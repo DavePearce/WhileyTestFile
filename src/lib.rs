@@ -28,7 +28,9 @@ pub struct WhileyTestFile {
 impl WhileyTestFile {
     pub fn from_str<'a>(input: &'a str) -> Result<WhileyTestFile> {
         let parser = Parser::new(input);
-        todo!["Implement me"]
+        let config = Config::new();
+        let frames = Vec::new();
+        Ok(WhileyTestFile{config,frames})
     }
 }
 
