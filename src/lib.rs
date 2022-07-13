@@ -13,7 +13,9 @@ use parser::Parser;
 pub enum Error {
     UnexpectedEof,
     InvalidConfigOption,
-    InvalidConfigValue
+    InvalidConfigValue,
+    InvalidIntValue,
+    InvalidStringValue
 }
 
 pub type Result<T> = result::Result<T, Error>;
@@ -36,6 +38,40 @@ impl WhileyTestFile {
         // Done
         Ok(wtf)
     }
+
+    /// Get configuration option associated with the given key.
+    pub fn get(&self, key: &str) -> Option<&Value> {
+        self.config.get(key)
+    }
+
+    /// Get configuration option which is expected to be an integer.
+    /// If its not an integer, or no such key exists, `None` is
+    /// returned.
+    pub fn get_int(&self, key: &str) -> Option<i64> {
+        match self.config.get(key) {
+            Some(&Value::Int(i)) => Some(i),
+            _ => None
+        }
+    }
+
+    /// Get configuration option which is expected to be an boolean.
+    /// If its not a boolean, or no such key exists, `None` is
+    /// returned.
+    pub fn get_bool(&self, key: &str) -> Option<bool> {
+        match self.config.get(key) {
+            Some(&Value::Bool(b)) => Some(b),
+            _ => None
+        }
+    }
+
+    /// Get configuration option which is expected to be a string If
+    /// its not a string, or no such key exists, `None` is returned.
+    pub fn get_str(&self, key: &str) -> Option<&String> {
+        match &self.config.get(key) {
+            Some(&Value::String(ref s)) => Some(s),
+            _ => None
+        }
+    }
 }
 
 // ===============================================================
@@ -43,12 +79,12 @@ impl WhileyTestFile {
 // ===============================================================
 
 #[derive(Clone,Debug,PartialEq)]
-enum Object {
+pub enum Value {
     String(String),
-    Int(u64),
+    Int(i64),
     Bool(bool)
 }
-type Config = HashMap<String, Object>;
+type Config = HashMap<String, Value>;
 
 // ===============================================================
 // Frame
