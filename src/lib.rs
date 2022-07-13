@@ -11,7 +11,9 @@ use parser::Parser;
 
 #[derive(Clone,Copy,Debug,PartialEq)]
 pub enum Error {
-    UnexpectedEof
+    UnexpectedEof,
+    InvalidConfigOption,
+    InvalidConfigValue
 }
 
 pub type Result<T> = result::Result<T, Error>;
@@ -27,10 +29,12 @@ pub struct WhileyTestFile {
 
 impl WhileyTestFile {
     pub fn from_str<'a>(input: &'a str) -> Result<WhileyTestFile> {
-        let parser = Parser::new(input);
-        let config = Config::new();
-        let frames = Vec::new();
-        Ok(WhileyTestFile{config,frames})
+        // Construct parser
+        let mut parser = Parser::new(input);
+        // Parse file (with errors)
+        let wtf = parser.parse()?;
+        // Done
+        Ok(wtf)
     }
 }
 
@@ -38,6 +42,7 @@ impl WhileyTestFile {
 // Config
 // ===============================================================
 
+#[derive(Clone,Debug,PartialEq)]
 enum Object {
     String(String),
     Int(u64),
