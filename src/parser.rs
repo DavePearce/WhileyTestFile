@@ -52,16 +52,23 @@ impl<'a> Parser<'a> {
     fn parse_config(&mut self) -> Result<Config> {
         let mut config = Config::new();
         // Continue parsing until start of first frame.
-        while !self.eof() && self.peek() != ">>>" {
-            let line = self.next();
-            let (k,v) = parse_kvp_line(line)?;
-            config.insert(k,v);
+        while !self.eof() && !self.peek().starts_with("===") {
+            let line = self.next().trim();
+            // Skip empty lines.
+            if line != "" {
+                let (k,v) = parse_kvp_line(line)?;
+                config.insert(k,v);
+            }
         }
         Ok(config)
     }
 
     /// Parse frames from this point
     fn parse_frames(&mut self) -> Result<Vec<Frame>> {
+        // Parse as many frames as there are.
+        while !self.eof() && self.peek().starts_with("===") {
+
+        }
         Ok(Vec::new())
     }
 }

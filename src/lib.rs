@@ -44,6 +44,11 @@ impl WhileyTestFile {
         self.config.get(key)
     }
 
+    /// Get number of frames in this test file.
+    pub fn size(&self) -> usize {
+        self.frames.len()
+    }
+
     /// Get configuration option which is expected to be an integer.
     /// If its not an integer, or no such key exists, `None` is
     /// returned.
