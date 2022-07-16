@@ -15,7 +15,9 @@ pub enum Error {
     InvalidConfigOption,
     InvalidConfigValue,
     InvalidIntValue,
-    InvalidStringValue
+    InvalidStringValue,
+    InvalidAction,
+    InvalidRange
 }
 
 pub type Result<T> = result::Result<T, Error>;
@@ -47,6 +49,11 @@ impl WhileyTestFile {
     /// Get number of frames in this test file.
     pub fn size(&self) -> usize {
         self.frames.len()
+    }
+
+    /// Get nth frame within this test file.
+    pub fn frame(&self, n: usize) -> &Frame {
+	&self.frames[n]
     }
 
     /// Get configuration option which is expected to be an integer.
@@ -102,14 +109,15 @@ type Config = HashMap<String, Value>;
 /// specific file.  Actions are applied in the order of appearance,
 /// though they are not expected to overlap.
 pub struct Frame {
-    actions: Vec<Action>,
-    markers: Vec<Marker>
+    pub actions: Vec<Action>,
+    pub markers: Vec<Marker>
 }
 
 // ===============================================================
 // Action
 // ===============================================================
 
+#[derive(Clone,Copy,Debug,PartialEq)]    
 pub enum ActionKind {
     INSERT,
     REMOVE
@@ -120,7 +128,7 @@ pub enum ActionKind {
 pub struct Action {
     pub kind: ActionKind,
     pub filename: String,
-    pub range: Range,
+    pub range: Option<Range>,
     pub lines: Vec<String>
 }
 
@@ -141,7 +149,4 @@ pub struct Marker {
 
 /// Represents an interval (e.g. of characters within a line).
 #[derive(Clone,Copy,Debug,PartialEq)]
-pub struct Range {
-    pub start: usize,
-    pub end: usize
-}
+pub struct Range(pub usize, pub usize);

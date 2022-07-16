@@ -1,4 +1,4 @@
-use crate::{Config,Error,Frame,Result,WhileyTestFile,Value};
+use crate::{Action,ActionKind,Config,Error,Frame,Range,Result,WhileyTestFile,Value};
 
 pub struct Parser<'a> {
     // Identifies current line number.
@@ -65,11 +65,53 @@ impl<'a> Parser<'a> {
 
     /// Parse frames from this point
     fn parse_frames(&mut self) -> Result<Vec<Frame>> {
+	let mut frames = Vec::new();
         // Parse as many frames as there are.
         while !self.eof() && self.peek().starts_with("===") {
-
+	    frames.push(self.parse_frame()?);
         }
-        Ok(Vec::new())
+        Ok(frames)
+    }
+
+    fn parse_frame(&mut self) -> Result<Frame> {
+	let _l = self.next(); // skip line beginning "==="
+ 	let mut actions = Vec::new();
+	// Parse actiondelta's
+	while !self.eof() && is_action_prefix(self.peek()) {
+	    actions.push(self.parse_action()?);
+        }
+	// Parse any markers
+	let mut markers = Vec::new();
+
+	// TODO
+	
+	Ok(Frame{actions,markers})
+    }
+
+    fn parse_action(&mut self) -> Result<Action> {
+	// Split action header by spaces.
+	let line : Vec<&str> = self.next().split(" ").collect();
+	// Determine action kind
+	let kind = if line[0] == ">>>" {
+	    ActionKind::INSERT
+	} else { ActionKind::REMOVE };
+	// Parse filename and (optional) range.
+	let (filename,range) = match line.len() {
+	    2 => (line[1].to_string(), None),
+	    3 => {
+		(line[1].to_string(), Some(parse_range(line[2])?))
+	    }
+	    _ => {
+		return Err(Error::InvalidAction);
+	    }
+	};
+	// Parse action content
+	let mut lines = Vec::new();
+	while !self.eof() && !is_prefix(self.peek()) {
+	    lines.push(self.next().to_string());
+        }	
+	// Done
+	Ok(Action{kind,filename,range,lines})
     }
 }
 
@@ -143,4 +185,50 @@ fn parse_bool_object(input: &str) -> Result<Value> {
     } else {
         return Err(Error::InvalidConfigValue)
     }
+}
+
+/// Parse a "range" which is either a single unsigned integer
+/// (e.g. `1`), or a pair of unsigned ints separated by a colon
+/// (e.g. `0:2`).
+fn parse_range(input: &str) -> Result<Range> {
+    let split : Vec<&str> = input.split(":").collect();
+    // Match the kind of range we have.
+    match split.len() {
+	1 => {
+	    let i = parse_range_index(split[0])?;
+	    Ok(Range(i,i))
+	}
+	2 => {
+	    let i = parse_range_index(split[0])?;
+	    let j = parse_range_index(split[1])?;	    
+	    Ok(Range(i,j))
+	}
+	_ => {
+	    return Err(Error::InvalidRange);
+	}
+    }
+}
+
+/// Parse an unsigned int which forms part of some range.  In essence,
+/// this method just handles the mapping of error values.
+fn parse_range_index(input: &str) -> Result<usize> {
+    match input.parse::<usize>() {
+	Ok(i) => Ok(i),
+	_ => Err(Error::InvalidRange)
+    }
+}
+
+/// Determine whether the given string (which represents a line)
+/// begins with one of the key control markers (e.g. `===` which
+/// indicates the start of a frame, etc).
+fn is_prefix(line: &str) -> bool {
+    return line.starts_with("===")
+	|| line.starts_with("---")
+	|| is_action_prefix(line);
+}
+
+/// Determine whether the given string (which represents a line)
+/// identifies the start of an action.
+fn is_action_prefix(line: &str) -> bool {
+    return line.starts_with(">>>") || line.starts_with("<<<");
 }

@@ -1,4 +1,4 @@
-use whiley_test_file::{Error,WhileyTestFile,Value};
+use whiley_test_file::{ActionKind,Error,Range,WhileyTestFile,Value};
 
 // ===============================================================
 // Config Tests
@@ -90,10 +90,132 @@ fn single_frame_01() {
 >>> main.whiley
 type nat is (int x)"#
     );
-    //
     assert!(wtf.size() == 1);
+    let f0 = wtf.frame(0);
+    assert!(f0.actions.len() == 1);
+    let a0 = &f0.actions[0];
+    assert!(a0.kind == ActionKind::INSERT);    
+    assert!(a0.lines.len() == 1);
+    assert!(a0.lines[0] == "type nat is (int x)");
 }
 
+#[test]
+fn single_frame_02() {
+    let wtf = parse(r#"
+====
+>>> main.whiley
+type nat is (int x)
+where x >= 0"#
+    );
+    assert!(wtf.size() == 1);
+    let f0 = wtf.frame(0);
+    assert!(f0.actions.len() == 1);
+    let a0 = &f0.actions[0];
+    assert!(a0.kind == ActionKind::INSERT);    
+    assert!(a0.lines.len() == 2);
+    assert!(a0.lines[0] == "type nat is (int x)");
+    assert!(a0.lines[1] == "where x >= 0");
+}
+
+#[test]
+fn single_frame_03() {
+    let wtf = parse(r#"
+====
+>>> main.whiley
+type nat is (int x)
+>>> other.whiley
+type uint is (int y)"#
+    );
+    assert!(wtf.size() == 1);
+    let f0 = wtf.frame(0);
+    assert!(f0.actions.len() == 2);
+    //
+    let a0 = &f0.actions[0];
+    assert!(a0.kind == ActionKind::INSERT);
+    assert!(a0.lines.len() == 1);
+    assert!(a0.lines[0] == "type nat is (int x)");
+    //
+    let a1 = &f0.actions[1];
+    assert!(a1.lines.len() == 1);
+    assert!(a1.lines[0] == "type uint is (int y)");
+}
+
+#[test]
+fn single_frame_04() {
+    let wtf = parse(r#"
+====
+<<< main.whiley"#
+    );
+    assert!(wtf.size() == 1);
+    let f0 = wtf.frame(0);
+    assert!(f0.actions.len() == 1);
+    let a0 = &f0.actions[0];
+    assert!(a0.kind == ActionKind::REMOVE);    
+    assert!(a0.lines.len() == 0);
+}
+
+#[test]
+fn single_frame_05() {
+    let wtf = parse(r#"
+====
+>>> main.whiley 0
+type nat is (int x)"#
+    );
+    assert!(wtf.size() == 1);
+    let f0 = wtf.frame(0);
+    assert!(f0.actions.len() == 1);
+    let a0 = &f0.actions[0];
+    assert!(a0.kind == ActionKind::INSERT);
+    assert!(a0.range.unwrap() == Range(0,0));
+    assert!(a0.lines.len() == 1);    
+}
+
+#[test]
+fn single_frame_06() {
+    let wtf = parse(r#"
+====
+>>> main.whiley 0:1
+type nat is (int x)"#
+    );
+    assert!(wtf.size() == 1);
+    let f0 = wtf.frame(0);
+    assert!(f0.actions.len() == 1);
+    let a0 = &f0.actions[0];
+    assert!(a0.kind == ActionKind::INSERT);
+    assert!(a0.range.unwrap() == Range(0,1));
+    assert!(a0.lines.len() == 1);    
+}
+
+// Markers
+
+// ===============================================================
+// Multi Frame Tests
+// ===============================================================
+
+#[test]
+fn multi_frame_01() {
+    let wtf = parse(r#"
+====
+>>> main.whiley
+type nat is (int x)
+====
+>>> main.whiley
+type uint is (int y)"#
+    );
+    assert!(wtf.size() == 2);
+    //
+    let f0 = wtf.frame(0);    
+    assert!(f0.actions.len() == 1);
+    let a0 = &f0.actions[0];
+    assert!(a0.lines.len() == 1);
+    assert!(a0.lines[0] == "type nat is (int x)");
+    //
+    let f1 = wtf.frame(1);
+    assert!(f1.actions.len() == 1);
+    let a1 = &f1.actions[0];
+    assert!(a1.lines.len() == 1);
+    assert!(a1.lines[0] == "type uint is (int y)");    
+}
 
 // ===============================================================
 // Helpers
