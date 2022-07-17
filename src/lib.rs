@@ -17,7 +17,10 @@ pub enum Error {
     InvalidIntValue,
     InvalidStringValue,
     InvalidAction,
-    InvalidRange
+    InvalidRange,
+    InvalidMarker,
+    InvalidErrorCode,
+    InvalidCoordinate
 }
 
 pub type Result<T> = result::Result<T, Error>;
@@ -117,7 +120,7 @@ pub struct Frame {
 // Action
 // ===============================================================
 
-#[derive(Clone,Copy,Debug,PartialEq)]    
+#[derive(Clone,Copy,Debug,PartialEq)]
 pub enum ActionKind {
     INSERT,
     REMOVE
@@ -140,8 +143,16 @@ pub struct Action {
 pub struct Marker {
     pub errno: u16,
     pub filename: String,
-    //pub location: Coordinate
+    pub location: Coordinate
 }
+
+// ===============================================================
+// Coordinate
+// ===============================================================
+
+/// Identifies a specific range of characters within a file.
+#[derive(Clone,Copy,Debug,PartialEq)]
+pub struct Coordinate(pub usize, pub Range);
 
 // ===============================================================
 // Range

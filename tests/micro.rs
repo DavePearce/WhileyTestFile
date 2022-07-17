@@ -1,4 +1,4 @@
-use whiley_test_file::{ActionKind,Error,Range,WhileyTestFile,Value};
+use whiley_test_file::{ActionKind,Coordinate,Error,Range,WhileyTestFile,Value};
 
 // ===============================================================
 // Config Tests
@@ -94,7 +94,7 @@ type nat is (int x)"#
     let f0 = wtf.frame(0);
     assert!(f0.actions.len() == 1);
     let a0 = &f0.actions[0];
-    assert!(a0.kind == ActionKind::INSERT);    
+    assert!(a0.kind == ActionKind::INSERT);
     assert!(a0.lines.len() == 1);
     assert!(a0.lines[0] == "type nat is (int x)");
 }
@@ -111,7 +111,7 @@ where x >= 0"#
     let f0 = wtf.frame(0);
     assert!(f0.actions.len() == 1);
     let a0 = &f0.actions[0];
-    assert!(a0.kind == ActionKind::INSERT);    
+    assert!(a0.kind == ActionKind::INSERT);
     assert!(a0.lines.len() == 2);
     assert!(a0.lines[0] == "type nat is (int x)");
     assert!(a0.lines[1] == "where x >= 0");
@@ -150,7 +150,7 @@ fn single_frame_04() {
     let f0 = wtf.frame(0);
     assert!(f0.actions.len() == 1);
     let a0 = &f0.actions[0];
-    assert!(a0.kind == ActionKind::REMOVE);    
+    assert!(a0.kind == ActionKind::REMOVE);
     assert!(a0.lines.len() == 0);
 }
 
@@ -167,7 +167,7 @@ type nat is (int x)"#
     let a0 = &f0.actions[0];
     assert!(a0.kind == ActionKind::INSERT);
     assert!(a0.range.unwrap() == Range(0,0));
-    assert!(a0.lines.len() == 1);    
+    assert!(a0.lines.len() == 1);
 }
 
 #[test]
@@ -183,10 +183,81 @@ type nat is (int x)"#
     let a0 = &f0.actions[0];
     assert!(a0.kind == ActionKind::INSERT);
     assert!(a0.range.unwrap() == Range(0,1));
-    assert!(a0.lines.len() == 1);    
+    assert!(a0.lines.len() == 1);
 }
 
-// Markers
+#[test]
+fn single_frame_07() {
+    let wtf = parse(r#"
+====
+>>> main.whiley
+type nat is (int x)
+---"#);
+    assert!(wtf.size() == 1);
+    let f0 = wtf.frame(0);
+    assert!(f0.actions.len() == 1);
+    let a0 = &f0.actions[0];
+    assert!(a0.kind == ActionKind::INSERT);
+    assert!(a0.lines.len() == 1);
+}
+
+#[test]
+fn single_frame_08() {
+    let wtf = parse(r#"
+====
+>>> main.whiley
+type nat is (int x)
+---
+E303 main.whiley 1,5:7"#);
+    assert!(wtf.size() == 1);
+    let f0 = wtf.frame(0);
+    assert!(f0.markers.len() == 1);
+    let m0 = &f0.markers[0];
+    assert!(m0.errno == 303);
+    assert!(m0.filename == "main.whiley");
+    assert!(m0.location == Coordinate(1,Range(5,7)));
+}
+
+#[test]
+fn single_frame_09() {
+    let wtf = parse(r#"
+====
+>>> main.whiley
+type nat is (int x)
+---
+E303 main.whiley 1,5"#);
+    assert!(wtf.size() == 1);
+    let f0 = wtf.frame(0);
+    assert!(f0.markers.len() == 1);
+    let m0 = &f0.markers[0];
+    assert!(m0.errno == 303);
+    assert!(m0.filename == "main.whiley");
+    assert!(m0.location == Coordinate(1,Range(5,5)));
+}
+
+#[test]
+fn single_frame_10() {
+    let wtf = parse(r#"
+====
+>>> main.whiley
+type nat is (int x)
+---
+E303 main.whiley 1,5:7
+E507 main.whiley 3,3:4"#);
+    assert!(wtf.size() == 1);
+    let f0 = wtf.frame(0);
+    assert!(f0.markers.len() == 2);
+    // First marker
+    let m0 = &f0.markers[0];
+    assert!(m0.errno == 303);
+    assert!(m0.filename == "main.whiley");
+    assert!(m0.location == Coordinate(1,Range(5,7)));
+    // Second marker
+    let m1 = &f0.markers[1];
+    assert!(m1.errno == 507);
+    assert!(m1.filename == "main.whiley");
+    assert!(m1.location == Coordinate(3,Range(3,4)));
+}
 
 // ===============================================================
 // Multi Frame Tests
@@ -204,7 +275,7 @@ type uint is (int y)"#
     );
     assert!(wtf.size() == 2);
     //
-    let f0 = wtf.frame(0);    
+    let f0 = wtf.frame(0);
     assert!(f0.actions.len() == 1);
     let a0 = &f0.actions[0];
     assert!(a0.lines.len() == 1);
@@ -214,7 +285,7 @@ type uint is (int y)"#
     assert!(f1.actions.len() == 1);
     let a1 = &f1.actions[0];
     assert!(a1.lines.len() == 1);
-    assert!(a1.lines[0] == "type uint is (int y)");    
+    assert!(a1.lines[0] == "type uint is (int y)");
 }
 
 // ===============================================================

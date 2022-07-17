@@ -1,4 +1,4 @@
-use crate::{Action,ActionKind,Config,Error,Frame,Range,Result,WhileyTestFile,Value};
+use crate::{Action,ActionKind,Config,Coordinate,Error,Frame,Marker,Range,Result,WhileyTestFile,Value};
 
 pub struct Parser<'a> {
     // Identifies current line number.
@@ -82,9 +82,13 @@ impl<'a> Parser<'a> {
         }
 	// Parse any markers
 	let mut markers = Vec::new();
-
-	// TODO
-	
+        if !self.eof() && is_marker_prefix(self.peek()) {
+            self.next(); // skip prefix
+            while !self.eof() && !is_prefix(self.peek()) {
+                markers.push(self.parse_marker()?);
+            }
+        }
+        // Done
 	Ok(Frame{actions,markers})
     }
 
@@ -109,9 +113,27 @@ impl<'a> Parser<'a> {
 	let mut lines = Vec::new();
 	while !self.eof() && !is_prefix(self.peek()) {
 	    lines.push(self.next().to_string());
-        }	
+        }
 	// Done
 	Ok(Action{kind,filename,range,lines})
+    }
+
+    /// Parser a marker which identifies something with a given
+    /// position in the file (e.g. an error code associated with a
+    /// given line and column in the file.
+    fn parse_marker(&mut self) -> Result<Marker> {
+        let line = self.next();
+        // Split line into components
+        let split : Vec<&str> = line.split(' ').collect();
+        // Sanity check enough components
+        if split.len() == 3 {
+            let errno = parse_error_code(split[0])?;
+            let filename = split[1].to_string();
+            let location = parse_coordinate(split[2])?;
+            Ok(Marker{errno,filename,location})
+        } else {
+            Err(Error::InvalidMarker)
+        }
     }
 }
 
@@ -129,40 +151,40 @@ fn parse_kvp_line(line: &str) -> Result<(String,Value)> {
         Err(Error::InvalidConfigOption)
     } else {
         let key = bits[0].trim().to_string();
-        let value = parse_object(bits[1].trim())?;
+        let value = parse_value(bits[1].trim())?;
         Ok((key,value))
     }
 }
 
 /// Parse a configuration object.
-fn parse_object(input: &str) -> Result<Value> {
+fn parse_value(input: &str) -> Result<Value> {
     // Extract first character.
     let c = input.chars().next();
     //
     match c {
         // Match ASCII digit.
         Some('0'|'1'|'2'|'3'|'4'|'5'|'6'|'7'|'8'|'9'|'-') => {
-            parse_int_object(input)
+            parse_int_value(input)
         }
         Some('"') => {
-            parse_string_object(input)
+            parse_string_value(input)
         }
         _ => {
-            parse_bool_object(input)
+            parse_bool_value(input)
         }
     }
 }
 
 /// Parse a string which should represent a (signed) integer value.
 /// If parsing fails for some reason, return appropriate error.
-fn parse_int_object(input: &str) -> Result<Value> {
+fn parse_int_value(input: &str) -> Result<Value> {
     match input.parse::<i64>() {
         Ok(i) => Ok(Value::Int(i)),
         _ => Err(Error::InvalidIntValue)
     }
 }
 
-fn parse_string_object(input: &str) -> Result<Value> {
+fn parse_string_value(input: &str) -> Result<Value> {
     let n = input.len() - 1;
     // Check last element is quote
     if n > 0 && &input[n..] == "\"" {
@@ -177,13 +199,28 @@ fn parse_string_object(input: &str) -> Result<Value> {
     Err(Error::InvalidStringValue)
 }
 
-fn parse_bool_object(input: &str) -> Result<Value> {
+fn parse_bool_value(input: &str) -> Result<Value> {
     if input == "true" {
         Ok(Value::Bool(true))
     } else if input == "false" {
         Ok(Value::Bool(false))
     } else {
         return Err(Error::InvalidConfigValue)
+    }
+}
+
+/// Parse a "coodinate" which identifies a character range within a
+/// given line.  For example, `1,0:2` identifies the range `0:2`
+/// within line `1`.
+fn parse_coordinate(mut input: &str) -> Result<Coordinate> {
+    let split : Vec<&str> = input.split(",").collect();
+    // Sanity check sufficient components
+    if split.len() == 2 {
+        let line = parse_range_index(split[0])?;
+        let range = parse_range(split[1])?;
+        Ok(Coordinate(line,range))
+    } else {
+        Err(Error::InvalidCoordinate)
     }
 }
 
@@ -200,7 +237,7 @@ fn parse_range(input: &str) -> Result<Range> {
 	}
 	2 => {
 	    let i = parse_range_index(split[0])?;
-	    let j = parse_range_index(split[1])?;	    
+	    let j = parse_range_index(split[1])?;
 	    Ok(Range(i,j))
 	}
 	_ => {
@@ -218,17 +255,40 @@ fn parse_range_index(input: &str) -> Result<usize> {
     }
 }
 
+
+/// Parse an error code which is an identifier followed by an unsigned
+/// int (e.g. `E101`, `W23`, etc).
+fn parse_error_code(mut input: &str) -> Result<u16> {
+    input = &input[1..];
+    match input.parse::<u16>() {
+        Ok(i) => Ok(i),
+        _ => Err(Error::InvalidErrorCode)
+    }
+}
+
 /// Determine whether the given string (which represents a line)
 /// begins with one of the key control markers (e.g. `===` which
 /// indicates the start of a frame, etc).
 fn is_prefix(line: &str) -> bool {
-    return line.starts_with("===")
-	|| line.starts_with("---")
-	|| is_action_prefix(line);
+    return is_frame_prefix(line)
+	|| is_action_prefix(line)
+        || is_marker_prefix(line);
+}
+
+/// Determine whether the given string (which represents a line)
+/// identifies the start of a framer.
+fn is_frame_prefix(line: &str) -> bool {
+    return line.starts_with("===");
 }
 
 /// Determine whether the given string (which represents a line)
 /// identifies the start of an action.
 fn is_action_prefix(line: &str) -> bool {
     return line.starts_with(">>>") || line.starts_with("<<<");
+}
+
+/// Determine whether the given string (which represents a line)
+/// identifies the start of a marker block.
+fn is_marker_prefix(line: &str) -> bool {
+    return line.starts_with("---");
 }
