@@ -458,6 +458,7 @@ E303 main.whiley 1,1:x"#, Error::InvalidRange);
 
 #[test]
 fn multi_frame_01() {
+    // Single file
     let wtf = parse(r#"
 ====
 >>> main.whiley
@@ -479,6 +480,159 @@ type uint is (int y)"#
     let a1 = &f1.actions[0];
     assert!(a1.lines.len() == 1);
     assert!(a1.lines[0] == "type uint is (int y)");
+}
+
+#[test]
+fn multi_frame_02() {
+    // Single file
+    let wtf = parse(r#"
+====
+>>> main.whiley
+type nat is (int x)
+---
+E101 main.whiley 1,5:7
+====
+>>> main.whiley
+type uint is (int y)"#
+    );
+    assert!(wtf.size() == 2);
+    //
+    let f0 = wtf.frame(0);
+    assert!(f0.markers.len() == 1);
+    //
+    let f1 = wtf.frame(1);
+    assert!(f1.markers.len() == 0);
+}
+
+#[test]
+fn multi_frame_03() {
+    // Single file
+    let wtf = parse(r#"
+====
+>>> main.whiley
+type nat is (int x)
+---
+====
+>>> main.whiley
+type uint is (int y)
+---
+E101 main.whiley 1,5"#
+    );
+    assert!(wtf.size() == 2);
+    //
+    let f0 = wtf.frame(0);
+    assert!(f0.markers.len() == 0);
+    //
+    let f1 = wtf.frame(1);
+    assert!(f1.markers.len() == 1);
+}
+
+#[test]
+fn multi_frame_04() {
+    // Single file
+    let wtf = parse(r#"
+====
+>>> main.whiley
+type nat is (int x)
+---
+====
+<<< main.whiley
+>>> other.whiley
+type uint is (int y)
+---
+E101 other.whiley 1,5
+====
+>>> other.whiley
+// A comment"#
+    );
+    assert!(wtf.size() == 3);
+    //
+    let f0 = wtf.frame(0);
+    assert!(f0.markers.len() == 0);
+    //
+    let f1 = wtf.frame(1);
+    assert!(f1.markers.len() == 1);
+}
+
+#[test]
+fn multi_frame_05() {
+    // Multi file
+    let wtf = parse(r#"
+====
+>>> main.whiley
+type nat is (int x)
+>>> other.whiley
+type uint is (int x)
+====
+>>> main.whiley
+type uint is (int y)
+---
+E101 main.whiley 1,5"#
+    );
+    assert!(wtf.size() == 2);
+    //
+    let f0 = wtf.frame(0);
+    assert!(f0.actions.len() == 2);
+    assert!(f0.markers.len() == 0);
+    //
+    let f1 = wtf.frame(1);
+    assert!(f1.markers.len() == 1);
+}
+
+#[test]
+fn multi_frame_06() {
+    // Multi file
+    let wtf = parse(r#"
+====
+>>> main.whiley
+type nat is (int x)
+>>> other.whiley
+// Unsigned int
+type uint is (int x)
+====
+>>> main.whiley
+type uint is (int y)
+>>> other2.whiley
+type uint is (int x)
+---
+E101 main.whiley 1,5"#
+    );
+    assert!(wtf.size() == 2);
+    //
+    let f0 = wtf.frame(0);
+    assert!(f0.actions.len() == 2);
+    assert!(f0.markers.len() == 0);
+    //
+    let f1 = wtf.frame(1);
+    assert!(f1.actions.len() == 2);
+    assert!(f1.markers.len() == 1);
+}
+
+#[test]
+fn multi_frame_07() {
+    // Multi file
+    let wtf = parse(r#"
+wyc.compile = false
+====
+>>> main.whiley
+type nat is (int x)
+====
+>>> main.whiley
+type uint is (int y)
+>>> other2.whiley
+type uint is (int x)
+---
+E101 main.whiley 1,5"#
+    );
+    assert!(wtf.size() == 2);
+    //
+    let f0 = wtf.frame(0);
+    assert!(f0.actions.len() == 1);
+    assert!(f0.markers.len() == 0);
+    //
+    let f1 = wtf.frame(1);
+    assert!(f1.actions.len() == 2);
+    assert!(f1.markers.len() == 1);
 }
 
 // ===============================================================
