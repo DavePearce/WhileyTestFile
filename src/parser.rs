@@ -216,11 +216,20 @@ fn parse_coordinate(mut input: &str) -> Result<Coordinate> {
     let split : Vec<&str> = input.split(",").collect();
     // Sanity check sufficient components
     if split.len() == 2 {
-        let line = parse_range_index(split[0])?;
+        let line = parse_coordinate_index(split[0])?;
         let range = parse_range(split[1])?;
         Ok(Coordinate(line,range))
     } else {
         Err(Error::InvalidCoordinate)
+    }
+}
+
+/// Parse an unsigned int which forms part of some coordinate.  In
+/// essence, this method just handles the mapping of error values.
+fn parse_coordinate_index(input: &str) -> Result<usize> {
+    match input.parse::<usize>() {
+	Ok(i) => Ok(i),
+	_ => Err(Error::InvalidCoordinate)
     }
 }
 
@@ -254,7 +263,6 @@ fn parse_range_index(input: &str) -> Result<usize> {
 	_ => Err(Error::InvalidRange)
     }
 }
-
 
 /// Parse an error code which is an identifier followed by an unsigned
 /// int (e.g. `E101`, `W23`, etc).
