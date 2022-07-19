@@ -85,6 +85,7 @@ fn config_string_invalid_04() {
 
 #[test]
 fn single_frame_01() {
+    // Frame with insert action
     let wtf = parse(r#"
 ====
 >>> main.whiley
@@ -101,6 +102,7 @@ type nat is (int x)"#
 
 #[test]
 fn single_frame_02() {
+    // Frame with insert action
     let wtf = parse(r#"
 ====
 >>> main.whiley
@@ -119,6 +121,7 @@ where x >= 0"#
 
 #[test]
 fn single_frame_03() {
+    // Frame with multiple insert actions
     let wtf = parse(r#"
 ====
 >>> main.whiley
@@ -142,6 +145,7 @@ type uint is (int y)"#
 
 #[test]
 fn single_frame_04() {
+    // Frame with remove action
     let wtf = parse(r#"
 ====
 <<< main.whiley"#
@@ -156,6 +160,7 @@ fn single_frame_04() {
 
 #[test]
 fn single_frame_05() {
+    // Frame with action range
     let wtf = parse(r#"
 ====
 >>> main.whiley 0
@@ -172,6 +177,7 @@ type nat is (int x)"#
 
 #[test]
 fn single_frame_06() {
+    // Frame with action range
     let wtf = parse(r#"
 ====
 >>> main.whiley 0:1
@@ -188,6 +194,7 @@ type nat is (int x)"#
 
 #[test]
 fn single_frame_07() {
+    // Frame with empty markers
     let wtf = parse(r#"
 ====
 >>> main.whiley
@@ -203,6 +210,7 @@ type nat is (int x)
 
 #[test]
 fn single_frame_08() {
+    // Frame with marker
     let wtf = parse(r#"
 ====
 >>> main.whiley
@@ -220,6 +228,7 @@ E303 main.whiley 1,5:7"#);
 
 #[test]
 fn single_frame_09() {
+    // Frame with marker
     let wtf = parse(r#"
 ====
 >>> main.whiley
@@ -237,6 +246,7 @@ E303 main.whiley 1,5"#);
 
 #[test]
 fn single_frame_10() {
+    // Frame with markers
     let wtf = parse(r#"
 ====
 >>> main.whiley
@@ -257,6 +267,189 @@ E507 main.whiley 3,3:4"#);
     assert!(m1.errno == 507);
     assert!(m1.filename == "main.whiley");
     assert!(m1.location == Coordinate(3,Range(3,4)));
+}
+
+
+#[test]
+fn single_frame_invalid_01() {
+    // Frame with invalid insert action
+    let wtf = parse_expecting(r#"
+====
+>>>
+type nat is (int x)"#, Error::InvalidAction);
+}
+
+#[test]
+fn single_frame_invalid_02() {
+    // Frame with invalid insert action
+    let wtf = parse_expecting(r#"
+====
+>>> 1 2 3
+type nat is (int x)"#, Error::InvalidAction);
+}
+
+#[test]
+fn single_frame_invalid_03() {
+    // Frame with invalid remove action
+    let wtf = parse_expecting(r#"
+====
+<<<
+type nat is (int x)"#, Error::InvalidAction);
+}
+
+#[test]
+fn single_frame_invalid_04() {
+    // Frame with invalid remove action
+    let wtf = parse_expecting(r#"
+====
+<<< 1 2 3
+type nat is (int x)"#, Error::InvalidAction);
+}
+
+#[test]
+fn single_frame_invalid_05() {
+    // Frame with invalid action range
+    let wtf = parse_expecting(r#"
+====
+>>> main.whiley x
+type nat is (int x)"#, Error::InvalidRange);
+}
+
+#[test]
+fn single_frame_invalid_06() {
+    // Frame with invalid action range
+    let wtf = parse_expecting(r#"
+====
+>>> main.whiley 1-
+type nat is (int x)"#, Error::InvalidRange);
+}
+
+#[test]
+fn single_frame_invalid_07() {
+    // Frame with invalid action range
+    let wtf = parse_expecting(r#"
+====
+>>> main.whiley 1:
+type nat is (int x)"#, Error::InvalidRange);
+}
+
+#[test]
+fn single_frame_invalid_08() {
+    // Frame with invalid action range
+    let wtf = parse_expecting(r#"
+====
+>>> main.whiley 1:x
+type nat is (int x)"#, Error::InvalidRange);
+}
+
+#[test]
+fn single_frame_invalid_09() {
+    // Frame with invalid marker
+    let wtf = parse_expecting(r#"
+====
+>>> main.whiley
+type nat is (int x)
+---
+E303"#, Error::InvalidMarker);
+}
+
+#[test]
+fn single_frame_invalid_10() {
+    // Frame with invalid marker
+    let wtf = parse_expecting(r#"
+====
+>>> main.whiley
+type nat is (int x)
+---
+E303 main.whiley"#, Error::InvalidMarker);
+}
+
+#[test]
+fn single_frame_invalid_11() {
+    // Frame with invalid marker
+    let wtf = parse_expecting(r#"
+====
+>>> main.whiley
+type nat is (int x)
+---
+E303 main.whiley 0,1:2 abc"#, Error::InvalidMarker);
+}
+
+#[test]
+fn single_frame_invalid_12() {
+    // Frame with invalid marker
+    let wtf = parse_expecting(r#"
+====
+>>> main.whiley
+type nat is (int x)
+---
+Exx main.whiley 1,5:7"#, Error::InvalidErrorCode);
+}
+
+#[test]
+fn single_frame_invalid_13() {
+    // Frame with invalid marker coordinate
+    let wtf = parse_expecting(r#"
+====
+>>> main.whiley
+type nat is (int x)
+---
+E303 main.whiley 1:5:7"#, Error::InvalidCoordinate);
+}
+
+#[test]
+fn single_frame_invalid_14() {
+    // Frame with invalid marker coordinate
+    let wtf = parse_expecting(r#"
+====
+>>> main.whiley
+type nat is (int x)
+---
+E303 main.whiley 1,5,7"#, Error::InvalidCoordinate);
+}
+
+#[test]
+fn single_frame_invalid_15() {
+    // Frame with invalid marker coordinate
+    let wtf = parse_expecting(r#"
+====
+>>> main.whiley
+type nat is (int x)
+---
+E303 main.whiley x,5:7"#, Error::InvalidCoordinate);
+}
+
+#[test]
+fn single_frame_invalid_16() {
+    // Frame with invalid marker coordinate
+    let wtf = parse_expecting(r#"
+====
+>>> main.whiley
+type nat is (int x)
+---
+E303 main.whiley 1,x:7"#, Error::InvalidRange);
+}
+
+#[test]
+fn single_frame_invalid_17() {
+    // Frame with invalid marker coordinate
+    let wtf = parse_expecting(r#"
+====
+>>> main.whiley
+type nat is (int x)
+---
+E303 main.whiley 1,1:"#, Error::InvalidRange);
+}
+
+#[test]
+fn single_frame_invalid_18() {
+    // Frame with invalid marker coordinate
+    let wtf = parse_expecting(r#"
+====
+>>> main.whiley
+type nat is (int x)
+---
+E303 main.whiley 1,1:x"#, Error::InvalidRange);
 }
 
 // ===============================================================
