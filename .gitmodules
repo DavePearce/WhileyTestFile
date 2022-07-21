@@ -1,0 +1,3 @@
+[submodule "WhileyLanguageTests"]
+	path = reference-tests
+	url = git@github.com:Whiley/WhileyLanguageTests.git
