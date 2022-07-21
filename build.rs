@@ -20,7 +20,7 @@ fn main() {
             write!(f,"
 #[test]
 fn test_{name}() {{
-    assert!(true);
+    check(\"{name}.test\");
 }}", name = n).unwrap();
         }
     }
