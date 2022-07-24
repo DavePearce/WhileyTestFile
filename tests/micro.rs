@@ -160,6 +160,18 @@ fn single_frame_04() {
 
 #[test]
 fn single_frame_05() {
+    // Whitespace after action line
+    let wtf = parse("====\n<<< main.whiley ");
+    assert!(wtf.size() == 1);
+    let f0 = wtf.frame(0);
+    assert!(f0.actions.len() == 1);
+    let a0 = &f0.actions[0];
+    assert!(a0.kind == ActionKind::REMOVE);
+    assert!(a0.lines.len() == 0);
+}
+
+#[test]
+fn single_frame_06() {
     // Frame with action range
     let wtf = parse(r#"
 ====
@@ -176,7 +188,20 @@ type nat is (int x)"#
 }
 
 #[test]
-fn single_frame_06() {
+fn single_frame_07() {
+    // Whitespace after action range
+    let wtf = parse("====\n>>> main.whiley 0 \ntype nat is (int x)");
+    assert!(wtf.size() == 1);
+    let f0 = wtf.frame(0);
+    assert!(f0.actions.len() == 1);
+    let a0 = &f0.actions[0];
+    assert!(a0.kind == ActionKind::INSERT);
+    assert!(a0.range.unwrap() == Range(0,0));
+    assert!(a0.lines.len() == 1);
+}
+
+#[test]
+fn single_frame_08() {
     // Frame with action range
     let wtf = parse(r#"
 ====
@@ -193,7 +218,7 @@ type nat is (int x)"#
 }
 
 #[test]
-fn single_frame_07() {
+fn single_frame_09() {
     // Frame with empty markers
     let wtf = parse(r#"
 ====
@@ -209,7 +234,7 @@ type nat is (int x)
 }
 
 #[test]
-fn single_frame_08() {
+fn single_frame_10() {
     // Frame with marker
     let wtf = parse(r#"
 ====
@@ -227,7 +252,7 @@ E303 main.whiley 1,5:7"#);
 }
 
 #[test]
-fn single_frame_09() {
+fn single_frame_11() {
     // Frame with marker
     let wtf = parse(r#"
 ====
@@ -245,7 +270,7 @@ E303 main.whiley 1,5"#);
 }
 
 #[test]
-fn single_frame_10() {
+fn single_frame_12() {
     // Frame with markers
     let wtf = parse(r#"
 ====
@@ -269,6 +294,23 @@ E507 main.whiley 3,3:4"#);
     assert!(m1.location == Coordinate(3,Range(3,4)));
 }
 
+#[test]
+fn single_frame_13() {
+    // White space after marker
+    let wtf = parse(r#"
+====
+>>> main.whiley
+type nat is (int x)
+---
+E303 main.whiley 1,5 "#);
+    assert!(wtf.size() == 1);
+    let f0 = wtf.frame(0);
+    assert!(f0.markers.len() == 1);
+    let m0 = &f0.markers[0];
+    assert!(m0.errno == 303);
+    assert!(m0.filename == "main.whiley");
+    assert!(m0.location == Coordinate(1,Range(5,5)));
+}
 
 #[test]
 fn single_frame_invalid_01() {
