@@ -93,17 +93,18 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_action(&mut self) -> Result<Action> {
+        let line = self.next().trim();
 	// Split action header by spaces.
-	let line : Vec<&str> = self.next().split(" ").collect();
+	let split : Vec<&str> = line.split(" ").collect();
 	// Determine action kind
-	let kind = if line[0] == ">>>" {
+	let kind = if split[0] == ">>>" {
 	    ActionKind::INSERT
 	} else { ActionKind::REMOVE };
 	// Parse filename and (optional) range.
-	let (filename,range) = match line.len() {
-	    2 => (line[1].to_string(), None),
+	let (filename,range) = match split.len() {
+	    2 => (split[1].to_string(), None),
 	    3 => {
-		(line[1].to_string(), Some(parse_range(line[2])?))
+		(split[1].to_string(), Some(parse_range(split[2])?))
 	    }
 	    _ => {
 		return Err(Error::InvalidAction);
@@ -122,7 +123,7 @@ impl<'a> Parser<'a> {
     /// position in the file (e.g. an error code associated with a
     /// given line and column in the file.
     fn parse_marker(&mut self) -> Result<Marker> {
-        let line = self.next();
+        let line = self.next().trim();
         // Split line into components
         let split : Vec<&str> = line.split(' ').collect();
         // Sanity check enough components
