@@ -213,7 +213,7 @@ fn parse_bool_value(input: &str) -> Result<Value> {
 /// Parse a "coodinate" which identifies a character range within a
 /// given line.  For example, `1,0:2` identifies the range `0:2`
 /// within line `1`.
-fn parse_coordinate(mut input: &str) -> Result<Coordinate> {
+fn parse_coordinate(input: &str) -> Result<Coordinate> {
     let split : Vec<&str> = input.split(",").collect();
     // Sanity check sufficient components
     if split.len() == 2 {

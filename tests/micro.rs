@@ -36,12 +36,12 @@ fn config_string_01() {
 
 #[test]
 fn config_invalid_01() {
-    let wtf = parse_expecting("hello ", Error::InvalidConfigOption);
+    let _wtf = parse_expecting("hello ", Error::InvalidConfigOption);
 }
 
 #[test]
 fn config_invalid_02() {
-    let wtf = parse_expecting("hello = ", Error::InvalidConfigValue);
+    let _wtf = parse_expecting("hello = ", Error::InvalidConfigValue);
 }
 
 #[test]
