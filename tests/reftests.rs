@@ -1,8 +1,9 @@
 use std::fs;
-use std::path::{PathBuf};
-use whiley_test_file::{WhileyTestFile};
+use std::path::PathBuf;
+use std::str::FromStr;
+use whiley_test_file::WhileyTestFile;
 
-pub static REFTESTS_DIR : &'static str = "reference-tests/tests";
+pub static REFTESTS_DIR: &str = "reference-tests/tests";
 
 // Include the programmatically generated test file.
 include!(concat!(env!("OUT_DIR"), "/reftests.rs"));

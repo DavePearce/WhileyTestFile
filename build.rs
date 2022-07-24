@@ -1,7 +1,7 @@
-use std::io::Write;
 use std::fs;
+use std::io::Write;
 
-pub static REFTESTS_DIR : &'static str = "reference-tests/tests";
+pub static REFTESTS_DIR: &str = "reference-tests/tests";
 
 /// The purpose of this script is to generate a set of tests for each
 /// of the language reference tests.
@@ -17,11 +17,16 @@ fn main() {
         let p = e.as_ref().unwrap().path();
         let n = p.file_stem().unwrap().to_str().unwrap();
         if p.extension().unwrap() == "test" {
-            write!(f,"
+            write!(
+                f,
+                "
 #[test]
 fn test_{name}() {{
     check(\"{name}.test\");
-}}", name = n).unwrap();
+}}",
+                name = n
+            )
+            .unwrap();
         }
     }
 }

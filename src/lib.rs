@@ -1,15 +1,16 @@
 // Hidden modules
 mod parser;
 
+use parser::Parser;
 use std::collections::HashMap;
 use std::result;
-use parser::Parser;
+use std::str::FromStr;
 
 // ===============================================================
 // Error
 // ===============================================================
 
-#[derive(Clone,Copy,Debug,PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Error {
     UnexpectedEof,
     InvalidConfigOption,
@@ -20,7 +21,7 @@ pub enum Error {
     InvalidRange,
     InvalidMarker,
     InvalidErrorCode,
-    InvalidCoordinate
+    InvalidCoordinate,
 }
 
 pub type Result<T> = result::Result<T, Error>;
@@ -31,19 +32,10 @@ pub type Result<T> = result::Result<T, Error>;
 
 pub struct WhileyTestFile {
     config: Config,
-    frames: Vec<Frame>
+    frames: Vec<Frame>,
 }
 
 impl WhileyTestFile {
-    pub fn from_str<'a>(input: &'a str) -> Result<WhileyTestFile> {
-        // Construct parser
-        let mut parser = Parser::new(input);
-        // Parse file (with errors)
-        let wtf = parser.parse()?;
-        // Done
-        Ok(wtf)
-    }
-
     /// Get configuration option associated with the given key.
     pub fn get(&self, key: &str) -> Option<&Value> {
         self.config.get(key)
@@ -56,7 +48,7 @@ impl WhileyTestFile {
 
     /// Get nth frame within this test file.
     pub fn frame(&self, n: usize) -> &Frame {
-	&self.frames[n]
+        &self.frames[n]
     }
 
     /// Get configuration option which is expected to be an integer.
@@ -65,7 +57,7 @@ impl WhileyTestFile {
     pub fn get_int(&self, key: &str) -> Option<i64> {
         match self.config.get(key) {
             Some(&Value::Int(i)) => Some(i),
-            _ => None
+            _ => None,
         }
     }
 
@@ -75,7 +67,7 @@ impl WhileyTestFile {
     pub fn get_bool(&self, key: &str) -> Option<bool> {
         match self.config.get(key) {
             Some(&Value::Bool(b)) => Some(b),
-            _ => None
+            _ => None,
         }
     }
 
@@ -84,8 +76,21 @@ impl WhileyTestFile {
     pub fn get_str(&self, key: &str) -> Option<&String> {
         match &self.config.get(key) {
             Some(&Value::String(ref s)) => Some(s),
-            _ => None
+            _ => None,
         }
+    }
+}
+
+impl FromStr for WhileyTestFile {
+    type Err = Error;
+
+    fn from_str(input: &str) -> Result<WhileyTestFile> {
+        // Construct parser
+        let mut parser = Parser::new(input);
+        // Parse file (with errors)
+        let wtf = parser.parse()?;
+        // Done
+        Ok(wtf)
     }
 }
 
@@ -93,11 +98,11 @@ impl WhileyTestFile {
 // Config
 // ===============================================================
 
-#[derive(Clone,Debug,PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Value {
     String(String),
     Int(i64),
-    Bool(bool)
+    Bool(bool),
 }
 type Config = HashMap<String, Value>;
 
@@ -113,17 +118,17 @@ type Config = HashMap<String, Value>;
 /// though they are not expected to overlap.
 pub struct Frame {
     pub actions: Vec<Action>,
-    pub markers: Vec<Marker>
+    pub markers: Vec<Marker>,
 }
 
 // ===============================================================
 // Action
 // ===============================================================
 
-#[derive(Clone,Copy,Debug,PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum ActionKind {
     INSERT,
-    REMOVE
+    REMOVE,
 }
 
 /// Represents an atomic action which can be applied to a source file,
@@ -132,7 +137,7 @@ pub struct Action {
     pub kind: ActionKind,
     pub filename: String,
     pub range: Option<Range>,
-    pub lines: Vec<String>
+    pub lines: Vec<String>,
 }
 
 // ===============================================================
@@ -143,7 +148,7 @@ pub struct Action {
 pub struct Marker {
     pub errno: u16,
     pub filename: String,
-    pub location: Coordinate
+    pub location: Coordinate,
 }
 
 // ===============================================================
@@ -151,7 +156,7 @@ pub struct Marker {
 // ===============================================================
 
 /// Identifies a specific range of characters within a file.
-#[derive(Clone,Copy,Debug,PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Coordinate(pub usize, pub Range);
 
 // ===============================================================
@@ -159,5 +164,5 @@ pub struct Coordinate(pub usize, pub Range);
 // ===============================================================
 
 /// Represents an interval (e.g. of characters within a line).
-#[derive(Clone,Copy,Debug,PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Range(pub usize, pub usize);
