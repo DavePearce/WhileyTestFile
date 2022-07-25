@@ -39,14 +39,13 @@ snapshot at this point is not expected to produce any errors.
 
 ```Rust
 use std::fs;
-use std::str::FromStr;
 use whiley_test_file::WhileyTestFile;
 
 fn load(filename: &str) -> WhileyTestFile {
     // Read the test file
     let input = fs::read_to_string(filename).unwrap();
     // Parse test file
-    return WhileyTestFile::from_str(&input).unwrap()
+    return WhileyTestFile::new(&input).unwrap()
 }
 ```
 

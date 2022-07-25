@@ -21,7 +21,7 @@ impl<'a> Parser<'a> {
     // ===============================================================
 
     /// Parse configuration from this point
-    pub fn parse(&mut self) -> Result<WhileyTestFile> {
+    pub fn parse(&mut self) -> Result<WhileyTestFile<'a>> {
         let config = self.parse_config()?;
         let frames = self.parse_frames()?;
         Ok(WhileyTestFile { config, frames })
@@ -65,7 +65,7 @@ impl<'a> Parser<'a> {
     }
 
     /// Parse frames from this point
-    fn parse_frames(&mut self) -> Result<Vec<Frame>> {
+    fn parse_frames(&mut self) -> Result<Vec<Frame<'a>>> {
         let mut frames = Vec::new();
         // Parse as many frames as there are.
         while !self.eof() && self.peek().starts_with("===") {
@@ -74,7 +74,7 @@ impl<'a> Parser<'a> {
         Ok(frames)
     }
 
-    fn parse_frame(&mut self) -> Result<Frame> {
+    fn parse_frame(&mut self) -> Result<Frame<'a>> {
         let _l = self.next(); // skip line beginning "==="
         let mut actions = Vec::new();
         // Parse actiondelta's
@@ -93,14 +93,14 @@ impl<'a> Parser<'a> {
         Ok(Frame { actions, markers })
     }
 
-    fn parse_action(&mut self) -> Result<Action> {
+    fn parse_action(&mut self) -> Result<Action<'a>> {
         let line = self.next().trim();
         // Split action header by spaces.
         let split: Vec<&str> = line.split(' ').collect();
         // Parse filename and (optional) range.
         let (filename, range) = match split.len() {
-            2 => (split[1].to_string(), None),
-            3 => (split[1].to_string(), Some(parse_range(split[2])?)),
+            2 => (split[1], None),
+            3 => (split[1], Some(parse_range(split[2])?)),
             _ => {
                 return Err(Error::InvalidAction);
             }

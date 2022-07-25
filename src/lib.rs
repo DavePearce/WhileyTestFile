@@ -33,14 +33,13 @@
 //!
 //! ```
 //! use std::fs;
-//! use std::str::FromStr;
 //! use whiley_test_file::WhileyTestFile;
 //!
 //! fn load(filename: &str) -> WhileyTestFile {
 //!     // Read the test file
 //!     let input = fs::read_to_string(filename).unwrap();
 //!     // Parse test file
-//!     return WhileyTestFile::from_str(&input).unwrap()
+//!     return WhileyTestFile::new(&input).unwrap()
 //! }
 //! ```
 
@@ -50,7 +49,6 @@ mod parser;
 use parser::Parser;
 use std::collections::HashMap;
 use std::result;
-use std::str::FromStr;
 
 // ===============================================================
 // Error
@@ -76,12 +74,21 @@ pub type Result<T> = result::Result<T, Error>;
 // Test File
 // ===============================================================
 
-pub struct WhileyTestFile {
+pub struct WhileyTestFile<'a> {
     config: Config,
-    frames: Vec<Frame>,
+    frames: Vec<Frame<'a>>,
 }
 
-impl WhileyTestFile {
+impl<'a> WhileyTestFile<'a> {
+    pub fn new(input: &'a str) -> Result<WhileyTestFile<'a>> {
+        // Construct parser
+        let mut parser = Parser::new(input);
+        // Parse file (with errors)
+        let wtf = parser.parse()?;
+        // Done
+        Ok(wtf)
+    }
+
     /// Get configuration option associated with the given key.
     pub fn get(&self, key: &str) -> Option<&Value> {
         self.config.get(key)
@@ -127,19 +134,6 @@ impl WhileyTestFile {
     }
 }
 
-impl FromStr for WhileyTestFile {
-    type Err = Error;
-
-    fn from_str(input: &str) -> Result<WhileyTestFile> {
-        // Construct parser
-        let mut parser = Parser::new(input);
-        // Parse file (with errors)
-        let wtf = parser.parse()?;
-        // Done
-        Ok(wtf)
-    }
-}
-
 // ===============================================================
 // Config
 // ===============================================================
@@ -162,8 +156,8 @@ type Config = HashMap<String, Value>;
 /// The set of actions includes _inserting_ and _removing_ lines on a
 /// specific file.  Actions are applied in the order of appearance,
 /// though they are not expected to overlap.
-pub struct Frame {
-    pub actions: Vec<Action>,
+pub struct Frame<'a> {
+    pub actions: Vec<Action<'a>>,
     pub markers: Vec<Marker>,
 }
 
@@ -174,13 +168,13 @@ pub struct Frame {
 /// Represents an atomic action which can be applied to a source file,
 /// such as inserting or replacing lines within the file.
 #[derive(Debug, PartialEq)]
-pub enum Action {
-    CREATE(String, Vec<String>),
-    REMOVE(String),
-    INSERT(String, Range, Vec<String>),
+pub enum Action<'a> {
+    CREATE(&'a str, Vec<String>),
+    REMOVE(&'a str),
+    INSERT(&'a str, Range, Vec<String>),
 }
 
-impl Action {
+impl<'a> Action<'a> {
     pub fn lines(&self) -> &[String] {
         match self {
             Action::CREATE(_, lines) => lines,
