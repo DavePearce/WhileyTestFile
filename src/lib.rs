@@ -171,19 +171,34 @@ pub struct Frame {
 // Action
 // ===============================================================
 
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub enum ActionKind {
-    INSERT,
-    REMOVE,
-}
-
 /// Represents an atomic action which can be applied to a source file,
 /// such as inserting or replacing lines within the file.
-pub struct Action {
-    pub kind: ActionKind,
-    pub filename: String,
-    pub range: Option<Range>,
-    pub lines: Vec<String>,
+#[derive(Debug, PartialEq)]
+pub enum Action {
+    CREATE(String, Vec<String>),
+    REMOVE(String),
+    INSERT(String, Range, Vec<String>),
+}
+
+impl Action {
+    pub fn lines(&self) -> &[String] {
+        match self {
+            Action::CREATE(_, lines) => lines,
+            Action::INSERT(_, _, lines) => lines,
+            _ => {
+                panic!("no line information!");
+            }
+        }
+    }
+
+    pub fn range(&self) -> &Range {
+        match self {
+            Action::INSERT(_, r, _) => r,
+            _ => {
+                panic!("no range information!");
+            }
+        }
+    }
 }
 
 // ===============================================================
