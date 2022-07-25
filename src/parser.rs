@@ -50,7 +50,7 @@ impl<'a> Parser<'a> {
     // ===============================================================
 
     /// Parse configuration from this point
-    fn parse_config(&mut self) -> Result<Config> {
+    fn parse_config(&mut self) -> Result<Config<'a>> {
         let mut config = Config::new();
         // Continue parsing until start of first frame.
         while !self.eof() && !self.peek().starts_with("===") {
@@ -150,7 +150,7 @@ impl<'a> Parser<'a> {
 /// ```text
 /// wyc.compile = false
 /// ```
-fn parse_kvp_line(line: &str) -> Result<(String, Value)> {
+fn parse_kvp_line(line: &str) -> Result<(&str, Value)> {
     // Split line into components
     let bits: Vec<&str> = line.split('=').collect();
     // Sanity check only two components!
@@ -158,7 +158,7 @@ fn parse_kvp_line(line: &str) -> Result<(String, Value)> {
         // Something is wrong!
         Err(Error::InvalidConfigOption)
     } else {
-        let key = bits[0].trim().to_string();
+        let key = bits[0].trim();
         let value = parse_value(bits[1].trim())?;
         Ok((key, value))
     }
@@ -197,7 +197,7 @@ fn parse_string_value(input: &str) -> Result<Value> {
         // Sanity check quotes don't appear within.
         if !content.contains('"') {
             // Success
-            return Ok(Value::String(content.to_string()));
+            return Ok(Value::String(content));
         }
     }
     Err(Error::InvalidStringValue)

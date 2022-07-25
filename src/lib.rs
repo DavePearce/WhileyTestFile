@@ -76,7 +76,7 @@ pub type Result<T> = result::Result<T, Error>;
 // ===============================================================
 
 pub struct WhileyTestFile<'a> {
-    config: Config,
+    config: Config<'a>,
     frames: Vec<Frame<'a>>,
 }
 
@@ -127,9 +127,9 @@ impl<'a> WhileyTestFile<'a> {
 
     /// Get configuration option which is expected to be a string If
     /// its not a string, or no such key exists, `None` is returned.
-    pub fn get_str(&self, key: &str) -> Option<&String> {
+    pub fn get_str(&self, key: &str) -> Option<&'a str> {
         match &self.config.get(key) {
-            Some(&Value::String(ref s)) => Some(s),
+            Some(&Value::String(s)) => Some(s),
             _ => None,
         }
     }
@@ -140,12 +140,12 @@ impl<'a> WhileyTestFile<'a> {
 // ===============================================================
 
 #[derive(Clone, Debug, PartialEq)]
-pub enum Value {
-    String(String),
+pub enum Value<'a> {
+    String(&'a str),
     Int(i64),
     Bool(bool),
 }
-type Config = HashMap<String, Value>;
+type Config<'a> = HashMap<&'a str, Value<'a>>;
 
 // ===============================================================
 // Frame

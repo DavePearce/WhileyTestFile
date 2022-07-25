@@ -31,7 +31,7 @@ fn config_bool_02() {
 
 #[test]
 fn config_string_01() {
-    parse_config_option("s = \"world\"", "s", Value::String("world".to_string()));
+    parse_config_option("s = \"world\"", "s", Value::String("world"));
 }
 
 #[test]
