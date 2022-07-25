@@ -35,11 +35,12 @@
 //! use std::fs;
 //! use whiley_test_file::WhileyTestFile;
 //!
-//! fn load(filename: &str) -> WhileyTestFile {
+//! fn load(filename: &str) {
 //!     // Read the test file
 //!     let input = fs::read_to_string(filename).unwrap();
 //!     // Parse test file
-//!     return WhileyTestFile::new(&input).unwrap()
+//!     let test_file = WhileyTestFile::new(&input).unwrap();
+//!     // ...
 //! }
 //! ```
 
@@ -158,7 +159,7 @@ type Config = HashMap<String, Value>;
 /// though they are not expected to overlap.
 pub struct Frame<'a> {
     pub actions: Vec<Action<'a>>,
-    pub markers: Vec<Marker>,
+    pub markers: Vec<Marker<'a>>,
 }
 
 // ===============================================================
@@ -169,13 +170,13 @@ pub struct Frame<'a> {
 /// such as inserting or replacing lines within the file.
 #[derive(Debug, PartialEq)]
 pub enum Action<'a> {
-    CREATE(&'a str, Vec<String>),
+    CREATE(&'a str, Vec<&'a str>),
     REMOVE(&'a str),
-    INSERT(&'a str, Range, Vec<String>),
+    INSERT(&'a str, Range, Vec<&'a str>),
 }
 
 impl<'a> Action<'a> {
-    pub fn lines(&self) -> &[String] {
+    pub fn lines(&self) -> &[&'a str] {
         match self {
             Action::CREATE(_, lines) => lines,
             Action::INSERT(_, _, lines) => lines,
@@ -200,9 +201,9 @@ impl<'a> Action<'a> {
 // ===============================================================
 
 /// Identifies an expected error at a location in a given source file.
-pub struct Marker {
+pub struct Marker<'a> {
     pub errno: u16,
-    pub filename: String,
+    pub filename: &'a str,
     pub location: Coordinate,
 }
 

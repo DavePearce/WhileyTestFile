@@ -108,7 +108,7 @@ impl<'a> Parser<'a> {
         // Parse action content
         let mut lines = Vec::new();
         while !self.eof() && !is_prefix(self.peek()) {
-            lines.push(self.next().to_string());
+            lines.push(self.next());
         }
         // Determine action kind
         let act = if split[0] == ">>>" {
@@ -125,14 +125,14 @@ impl<'a> Parser<'a> {
     /// Parser a marker which identifies something with a given
     /// position in the file (e.g. an error code associated with a
     /// given line and column in the file.
-    fn parse_marker(&mut self) -> Result<Marker> {
+    fn parse_marker(&mut self) -> Result<Marker<'a>> {
         let line = self.next().trim();
         // Split line into components
         let split: Vec<&str> = line.split(' ').collect();
         // Sanity check enough components
         if split.len() == 3 {
             let errno = parse_error_code(split[0])?;
-            let filename = split[1].to_string();
+            let filename = split[1];
             let location = parse_coordinate(split[2])?;
             Ok(Marker {
                 errno,
