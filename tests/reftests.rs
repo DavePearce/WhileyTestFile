@@ -1,6 +1,5 @@
 use std::fs;
 use std::path::PathBuf;
-use std::str::FromStr;
 use whiley_test_file::WhileyTestFile;
 
 pub static REFTESTS_DIR: &str = "reference-tests/tests";
@@ -19,7 +18,7 @@ fn check(test: &str) {
     // Read the test file
     let input = fs::read_to_string(filename).unwrap();
     // Parser test file
-    let wtf = WhileyTestFile::from_str(&input);
+    let wtf = WhileyTestFile::new(&input);
     // Assume parsing succeeded
     assert!(wtf.is_ok());
 }

@@ -33,14 +33,14 @@
 //!
 //! ```
 //! use std::fs;
-//! use std::str::FromStr;
 //! use whiley_test_file::WhileyTestFile;
 //!
-//! fn load(filename: &str) -> WhileyTestFile {
+//! fn load(filename: &str) {
 //!     // Read the test file
 //!     let input = fs::read_to_string(filename).unwrap();
 //!     // Parse test file
-//!     return WhileyTestFile::from_str(&input).unwrap()
+//!     let test_file = WhileyTestFile::new(&input).unwrap();
+//!     // ...
 //! }
 //! ```
 
@@ -50,7 +50,6 @@ mod parser;
 use parser::Parser;
 use std::collections::HashMap;
 use std::result;
-use std::str::FromStr;
 
 // ===============================================================
 // Error
@@ -76,12 +75,21 @@ pub type Result<T> = result::Result<T, Error>;
 // Test File
 // ===============================================================
 
-pub struct WhileyTestFile {
-    config: Config,
-    frames: Vec<Frame>,
+pub struct WhileyTestFile<'a> {
+    config: Config<'a>,
+    frames: Vec<Frame<'a>>,
 }
 
-impl WhileyTestFile {
+impl<'a> WhileyTestFile<'a> {
+    pub fn new(input: &'a str) -> Result<WhileyTestFile<'a>> {
+        // Construct parser
+        let mut parser = Parser::new(input);
+        // Parse file (with errors)
+        let wtf = parser.parse()?;
+        // Done
+        Ok(wtf)
+    }
+
     /// Get configuration option associated with the given key.
     pub fn get(&self, key: &str) -> Option<&Value> {
         self.config.get(key)
@@ -119,24 +127,11 @@ impl WhileyTestFile {
 
     /// Get configuration option which is expected to be a string If
     /// its not a string, or no such key exists, `None` is returned.
-    pub fn get_str(&self, key: &str) -> Option<&String> {
+    pub fn get_str(&self, key: &str) -> Option<&'a str> {
         match &self.config.get(key) {
-            Some(&Value::String(ref s)) => Some(s),
+            Some(&Value::String(s)) => Some(s),
             _ => None,
         }
-    }
-}
-
-impl FromStr for WhileyTestFile {
-    type Err = Error;
-
-    fn from_str(input: &str) -> Result<WhileyTestFile> {
-        // Construct parser
-        let mut parser = Parser::new(input);
-        // Parse file (with errors)
-        let wtf = parser.parse()?;
-        // Done
-        Ok(wtf)
     }
 }
 
@@ -145,12 +140,12 @@ impl FromStr for WhileyTestFile {
 // ===============================================================
 
 #[derive(Clone, Debug, PartialEq)]
-pub enum Value {
-    String(String),
+pub enum Value<'a> {
+    String(&'a str),
     Int(i64),
     Bool(bool),
 }
-type Config = HashMap<String, Value>;
+type Config<'a> = HashMap<&'a str, Value<'a>>;
 
 // ===============================================================
 // Frame
@@ -162,9 +157,9 @@ type Config = HashMap<String, Value>;
 /// The set of actions includes _inserting_ and _removing_ lines on a
 /// specific file.  Actions are applied in the order of appearance,
 /// though they are not expected to overlap.
-pub struct Frame {
-    pub actions: Vec<Action>,
-    pub markers: Vec<Marker>,
+pub struct Frame<'a> {
+    pub actions: Vec<Action<'a>>,
+    pub markers: Vec<Marker<'a>>,
 }
 
 // ===============================================================
@@ -174,14 +169,14 @@ pub struct Frame {
 /// Represents an atomic action which can be applied to a source file,
 /// such as inserting or replacing lines within the file.
 #[derive(Debug, PartialEq)]
-pub enum Action {
-    CREATE(String, Vec<String>),
-    REMOVE(String),
-    INSERT(String, Range, Vec<String>),
+pub enum Action<'a> {
+    CREATE(&'a str, Vec<&'a str>),
+    REMOVE(&'a str),
+    INSERT(&'a str, Range, Vec<&'a str>),
 }
 
-impl Action {
-    pub fn lines(&self) -> &[String] {
+impl<'a> Action<'a> {
+    pub fn lines(&self) -> &[&'a str] {
         match self {
             Action::CREATE(_, lines) => lines,
             Action::INSERT(_, _, lines) => lines,
@@ -206,9 +201,9 @@ impl Action {
 // ===============================================================
 
 /// Identifies an expected error at a location in a given source file.
-pub struct Marker {
+pub struct Marker<'a> {
     pub errno: u16,
-    pub filename: String,
+    pub filename: &'a str,
     pub location: Coordinate,
 }
 

@@ -1,4 +1,3 @@
-use std::str::FromStr;
 use whiley_test_file::{Action, Coordinate, Error, Range, Value, WhileyTestFile};
 
 // ===============================================================
@@ -32,7 +31,7 @@ fn config_bool_02() {
 
 #[test]
 fn config_string_01() {
-    parse_config_option("s = \"world\"", "s", Value::String("world".to_string()));
+    parse_config_option("s = \"world\"", "s", Value::String("world"));
 }
 
 #[test]
@@ -759,7 +758,7 @@ E101 main.whiley 1,5"#,
 
 fn parse(input: &str) -> WhileyTestFile {
     // Parser test file
-    let wtf = WhileyTestFile::from_str(input);
+    let wtf = WhileyTestFile::new(input);
     // Assume parsing succeeded
     assert!(wtf.is_ok());
     // Done
@@ -768,7 +767,7 @@ fn parse(input: &str) -> WhileyTestFile {
 
 fn parse_config_option(input: &str, key: &str, val: Value) {
     // Parser test file
-    let wtf = WhileyTestFile::from_str(input).unwrap();
+    let wtf = WhileyTestFile::new(input).unwrap();
     // Look for value
     match wtf.get(key) {
         Some(v) => {
@@ -790,7 +789,7 @@ fn parse_config_option(input: &str, key: &str, val: Value) {
 
 fn parse_expecting(input: &str, expected: Error) {
     // Parser test file
-    match WhileyTestFile::from_str(input) {
+    match WhileyTestFile::new(input) {
         Ok(_) => {
             panic!("File should not have parsed!");
         }

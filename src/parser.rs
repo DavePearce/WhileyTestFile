@@ -21,7 +21,7 @@ impl<'a> Parser<'a> {
     // ===============================================================
 
     /// Parse configuration from this point
-    pub fn parse(&mut self) -> Result<WhileyTestFile> {
+    pub fn parse(&mut self) -> Result<WhileyTestFile<'a>> {
         let config = self.parse_config()?;
         let frames = self.parse_frames()?;
         Ok(WhileyTestFile { config, frames })
@@ -50,7 +50,7 @@ impl<'a> Parser<'a> {
     // ===============================================================
 
     /// Parse configuration from this point
-    fn parse_config(&mut self) -> Result<Config> {
+    fn parse_config(&mut self) -> Result<Config<'a>> {
         let mut config = Config::new();
         // Continue parsing until start of first frame.
         while !self.eof() && !self.peek().starts_with("===") {
@@ -65,7 +65,7 @@ impl<'a> Parser<'a> {
     }
 
     /// Parse frames from this point
-    fn parse_frames(&mut self) -> Result<Vec<Frame>> {
+    fn parse_frames(&mut self) -> Result<Vec<Frame<'a>>> {
         let mut frames = Vec::new();
         // Parse as many frames as there are.
         while !self.eof() && self.peek().starts_with("===") {
@@ -74,7 +74,7 @@ impl<'a> Parser<'a> {
         Ok(frames)
     }
 
-    fn parse_frame(&mut self) -> Result<Frame> {
+    fn parse_frame(&mut self) -> Result<Frame<'a>> {
         let _l = self.next(); // skip line beginning "==="
         let mut actions = Vec::new();
         // Parse actiondelta's
@@ -93,14 +93,14 @@ impl<'a> Parser<'a> {
         Ok(Frame { actions, markers })
     }
 
-    fn parse_action(&mut self) -> Result<Action> {
+    fn parse_action(&mut self) -> Result<Action<'a>> {
         let line = self.next().trim();
         // Split action header by spaces.
         let split: Vec<&str> = line.split(' ').collect();
         // Parse filename and (optional) range.
         let (filename, range) = match split.len() {
-            2 => (split[1].to_string(), None),
-            3 => (split[1].to_string(), Some(parse_range(split[2])?)),
+            2 => (split[1], None),
+            3 => (split[1], Some(parse_range(split[2])?)),
             _ => {
                 return Err(Error::InvalidAction);
             }
@@ -108,7 +108,7 @@ impl<'a> Parser<'a> {
         // Parse action content
         let mut lines = Vec::new();
         while !self.eof() && !is_prefix(self.peek()) {
-            lines.push(self.next().to_string());
+            lines.push(self.next());
         }
         // Determine action kind
         let act = if split[0] == ">>>" {
@@ -125,14 +125,14 @@ impl<'a> Parser<'a> {
     /// Parser a marker which identifies something with a given
     /// position in the file (e.g. an error code associated with a
     /// given line and column in the file.
-    fn parse_marker(&mut self) -> Result<Marker> {
+    fn parse_marker(&mut self) -> Result<Marker<'a>> {
         let line = self.next().trim();
         // Split line into components
         let split: Vec<&str> = line.split(' ').collect();
         // Sanity check enough components
         if split.len() == 3 {
             let errno = parse_error_code(split[0])?;
-            let filename = split[1].to_string();
+            let filename = split[1];
             let location = parse_coordinate(split[2])?;
             Ok(Marker {
                 errno,
@@ -150,7 +150,7 @@ impl<'a> Parser<'a> {
 /// ```text
 /// wyc.compile = false
 /// ```
-fn parse_kvp_line(line: &str) -> Result<(String, Value)> {
+fn parse_kvp_line(line: &str) -> Result<(&str, Value)> {
     // Split line into components
     let bits: Vec<&str> = line.split('=').collect();
     // Sanity check only two components!
@@ -158,7 +158,7 @@ fn parse_kvp_line(line: &str) -> Result<(String, Value)> {
         // Something is wrong!
         Err(Error::InvalidConfigOption)
     } else {
-        let key = bits[0].trim().to_string();
+        let key = bits[0].trim();
         let value = parse_value(bits[1].trim())?;
         Ok((key, value))
     }
@@ -197,7 +197,7 @@ fn parse_string_value(input: &str) -> Result<Value> {
         // Sanity check quotes don't appear within.
         if !content.contains('"') {
             // Success
-            return Ok(Value::String(content.to_string()));
+            return Ok(Value::String(content));
         }
     }
     Err(Error::InvalidStringValue)
