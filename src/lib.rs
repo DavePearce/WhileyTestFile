@@ -133,6 +133,11 @@ impl<'a> WhileyTestFile<'a> {
             _ => None,
         }
     }
+
+    /// Obtain an iterator to the frames of this test file.
+    pub fn iter<'b>(&'b self) -> std::slice::Iter<'b, Frame> {
+        self.frames.iter()
+    }
 }
 
 // ===============================================================

@@ -752,6 +752,29 @@ E101 main.whiley 1,5"#,
     assert!(f1.markers.len() == 1);
 }
 
+#[test]
+fn multi_frame_08() {
+    // Frame iterator
+    let wtf = parse(
+        r#"
+wyc.compile = false
+====
+>>> main.whiley
+type nat is (int x)
+====
+>>> main.whiley
+type uint is (int y)
+>>> other2.whiley
+type uint is (int x)"#,
+    );
+    let mut last = 0;
+    // Iterate frames
+    for fr in wtf.iter() {
+        assert!(last < fr.actions.len());
+        last = fr.actions.len();
+    }
+}
+
 // ===============================================================
 // Helpers
 // ===============================================================
