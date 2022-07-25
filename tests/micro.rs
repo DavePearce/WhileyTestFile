@@ -1,5 +1,5 @@
 use std::str::FromStr;
-use whiley_test_file::{ActionKind, Coordinate, Error, Range, Value, WhileyTestFile};
+use whiley_test_file::{Action, Coordinate, Error, Range, Value, WhileyTestFile};
 
 // ===============================================================
 // Config Tests
@@ -97,9 +97,9 @@ type nat is (int x)"#,
     let f0 = wtf.frame(0);
     assert!(f0.actions.len() == 1);
     let a0 = &f0.actions[0];
-    assert!(a0.kind == ActionKind::INSERT);
-    assert!(a0.lines.len() == 1);
-    assert!(a0.lines[0] == "type nat is (int x)");
+    assert!(matches!(a0, Action::CREATE(_, _)));
+    assert!(a0.lines().len() == 1);
+    assert!(a0.lines()[0] == "type nat is (int x)");
 }
 
 #[test]
@@ -116,10 +116,10 @@ where x >= 0"#,
     let f0 = wtf.frame(0);
     assert!(f0.actions.len() == 1);
     let a0 = &f0.actions[0];
-    assert!(a0.kind == ActionKind::INSERT);
-    assert!(a0.lines.len() == 2);
-    assert!(a0.lines[0] == "type nat is (int x)");
-    assert!(a0.lines[1] == "where x >= 0");
+    assert!(matches!(a0, Action::CREATE(_, _)));
+    assert!(a0.lines().len() == 2);
+    assert!(a0.lines()[0] == "type nat is (int x)");
+    assert!(a0.lines()[1] == "where x >= 0");
 }
 
 #[test]
@@ -138,13 +138,13 @@ type uint is (int y)"#,
     assert!(f0.actions.len() == 2);
     //
     let a0 = &f0.actions[0];
-    assert!(a0.kind == ActionKind::INSERT);
-    assert!(a0.lines.len() == 1);
-    assert!(a0.lines[0] == "type nat is (int x)");
+    assert!(matches!(a0, Action::CREATE(_, _)));
+    assert!(a0.lines().len() == 1);
+    assert!(a0.lines()[0] == "type nat is (int x)");
     //
     let a1 = &f0.actions[1];
-    assert!(a1.lines.len() == 1);
-    assert!(a1.lines[0] == "type uint is (int y)");
+    assert!(a1.lines().len() == 1);
+    assert!(a1.lines()[0] == "type uint is (int y)");
 }
 
 #[test]
@@ -159,8 +159,7 @@ fn single_frame_04() {
     let f0 = wtf.frame(0);
     assert!(f0.actions.len() == 1);
     let a0 = &f0.actions[0];
-    assert!(a0.kind == ActionKind::REMOVE);
-    assert!(a0.lines.len() == 0);
+    assert!(matches!(a0, Action::REMOVE(_)));
 }
 
 #[test]
@@ -171,8 +170,7 @@ fn single_frame_05() {
     let f0 = wtf.frame(0);
     assert!(f0.actions.len() == 1);
     let a0 = &f0.actions[0];
-    assert!(a0.kind == ActionKind::REMOVE);
-    assert!(a0.lines.len() == 0);
+    assert!(matches!(a0, Action::REMOVE(_)));
 }
 
 #[test]
@@ -188,9 +186,9 @@ type nat is (int x)"#,
     let f0 = wtf.frame(0);
     assert!(f0.actions.len() == 1);
     let a0 = &f0.actions[0];
-    assert!(a0.kind == ActionKind::INSERT);
-    assert!(a0.range.unwrap() == Range(0, 0));
-    assert!(a0.lines.len() == 1);
+    assert!(matches!(a0, Action::INSERT(_, _, _)));
+    assert!(a0.range() == &Range(0, 0));
+    assert!(a0.lines().len() == 1);
 }
 
 #[test]
@@ -201,9 +199,9 @@ fn single_frame_07() {
     let f0 = wtf.frame(0);
     assert!(f0.actions.len() == 1);
     let a0 = &f0.actions[0];
-    assert!(a0.kind == ActionKind::INSERT);
-    assert!(a0.range.unwrap() == Range(0, 0));
-    assert!(a0.lines.len() == 1);
+    assert!(matches!(a0, Action::INSERT(_, _, _)));
+    assert!(a0.range() == &Range(0, 0));
+    assert!(a0.lines().len() == 1);
 }
 
 #[test]
@@ -219,9 +217,9 @@ type nat is (int x)"#,
     let f0 = wtf.frame(0);
     assert!(f0.actions.len() == 1);
     let a0 = &f0.actions[0];
-    assert!(a0.kind == ActionKind::INSERT);
-    assert!(a0.range.unwrap() == Range(0, 1));
-    assert!(a0.lines.len() == 1);
+    assert!(matches!(a0, Action::INSERT(_, _, _)));
+    assert!(a0.range() == &Range(0, 1));
+    assert!(a0.lines().len() == 1);
 }
 
 #[test]
@@ -238,8 +236,8 @@ type nat is (int x)
     let f0 = wtf.frame(0);
     assert!(f0.actions.len() == 1);
     let a0 = &f0.actions[0];
-    assert!(a0.kind == ActionKind::INSERT);
-    assert!(a0.lines.len() == 1);
+    assert!(matches!(a0, Action::CREATE(_, _)));
+    assert!(a0.lines().len() == 1);
 }
 
 #[test]
@@ -586,14 +584,14 @@ type uint is (int y)"#,
     let f0 = wtf.frame(0);
     assert!(f0.actions.len() == 1);
     let a0 = &f0.actions[0];
-    assert!(a0.lines.len() == 1);
-    assert!(a0.lines[0] == "type nat is (int x)");
+    assert!(a0.lines().len() == 1);
+    assert!(a0.lines()[0] == "type nat is (int x)");
     //
     let f1 = wtf.frame(1);
     assert!(f1.actions.len() == 1);
     let a1 = &f1.actions[0];
-    assert!(a1.lines.len() == 1);
-    assert!(a1.lines[0] == "type uint is (int y)");
+    assert!(a1.lines().len() == 1);
+    assert!(a1.lines()[0] == "type uint is (int y)");
 }
 
 #[test]

@@ -1,6 +1,5 @@
 use crate::{
-    Action, ActionKind, Config, Coordinate, Error, Frame, Marker, Range, Result, Value,
-    WhileyTestFile,
+    Action, Config, Coordinate, Error, Frame, Marker, Range, Result, Value, WhileyTestFile,
 };
 
 pub struct Parser<'a> {
@@ -98,12 +97,6 @@ impl<'a> Parser<'a> {
         let line = self.next().trim();
         // Split action header by spaces.
         let split: Vec<&str> = line.split(' ').collect();
-        // Determine action kind
-        let kind = if split[0] == ">>>" {
-            ActionKind::INSERT
-        } else {
-            ActionKind::REMOVE
-        };
         // Parse filename and (optional) range.
         let (filename, range) = match split.len() {
             2 => (split[1].to_string(), None),
@@ -117,13 +110,16 @@ impl<'a> Parser<'a> {
         while !self.eof() && !is_prefix(self.peek()) {
             lines.push(self.next().to_string());
         }
-        // Done
-        Ok(Action {
-            kind,
-            filename,
-            range,
-            lines,
-        })
+        // Determine action kind
+        let act = if split[0] == ">>>" {
+            match range {
+                Some(r) => Action::INSERT(filename, r, lines),
+                None => Action::CREATE(filename, lines),
+            }
+        } else {
+            Action::REMOVE(filename)
+        };
+        Ok(act)
     }
 
     /// Parser a marker which identifies something with a given
