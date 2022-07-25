@@ -40,12 +40,13 @@ snapshot at this point is not expected to produce any errors.
 ```Rust
 use std::fs;
 use whiley_test_file::WhileyTestFile;
-
-fn load(filename: &str) -> WhileyTestFile {
+//!
+fn load(filename: &str) {
     // Read the test file
     let input = fs::read_to_string(filename).unwrap();
     // Parse test file
-    return WhileyTestFile::new(&input).unwrap()
+    let test_file = WhileyTestFile::new(&input).unwrap();
+    // ...
 }
 ```
 
